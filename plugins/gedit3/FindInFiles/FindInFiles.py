@@ -253,15 +253,8 @@ class ResultsView(Gtk.VBox):
     def get_filebrowser_root(self):
         base = u'org.gnome.gedit.plugins.filebrowser'
         client = Gio.Settings.new(base)
-#        client.add_dir(base, GConf.ClientPreloadType.PRELOAD_NONE)
-#        path = os.path.join(base, u'virtual_root')
         val = client.get_string('virtual-root')
         if val is not None:
-          #also read hidden files setting
-#            base = u'org.gnome.gedit.plugins.filebrowser'
-#            client = Gio.Settings.new(base)
-#            client.add_dir(base, GConf.ClientPreloadType.PRELOAD_NONE)
-#            path = os.path.join(base, u'filter_mode')
             try:
                 fbfilter = client.get_strv('filter-mode')
             except AttributeError:
@@ -287,9 +280,6 @@ class PluginHelper:
 
         self.window = None
         self.plugin = None
-
-#    def update_ui(self):
-#        pass
 
     def add_panel(self, window):
         panel = self.window.get_side_panel()
