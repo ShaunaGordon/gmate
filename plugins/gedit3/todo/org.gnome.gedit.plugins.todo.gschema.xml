@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.gedit.plugins.todo" path="/org/gnome/gedit/plugins/todo/">
+    <key type="as" name="allowed-extensions">
+      <default>['py','html','rb','yml','sql','c','php','js','rhtml','erb','rake']</default>
+      <summary>Allowed Extensions</summary>
+      <description>Files with these extensions will be parsed.</description>
+    </key>
+    <key type="as" name="skipped-dirs">
+    	<default>['.Trash','.svn','.mozilla','vendor','temp','CVS','_darcs','.gnome2','.gnome3']</default>
+    	<summary>Skipped Directories</summary>
+    	<description>Directories ignored by parser when looking for files.</description>
+    </key>
+    <key type="as" name="skipped-files">
+    	<default>['']</default>
+    	<summary>Skipped Files</summary>
+    	<description>Files ignored by parser</description>
+    </key>
+    <key type="b" name="show-empty-marks">
+    	<default>true</default>
+    	<summary>Show Empty Marks</summary>
+    	<description>If true, empty marks will appear on screen with 0 entries, but just on marks title menu.</description>
+    </key>
+    <key type="b" name="require-colon">
+    	<default>true</default>
+    	<summary>Require Colon</summary>
+    	<description>Enable or disable matching just marks with colon at the end. When enabled, just marks like "TODO:", "FIXME:", etc. will match properly, and marks like "IMPROVE" will not.</description>
+    </key>
+    <key type="as" name="known-marks">
+    	<default>['TODO','FIXME','CHANGED','NOTE','OPTIMIZE','IMPROVE']</default>
+    	<summary>Know Marks</summary>
+    	<description>Known marks that the parser will look for in files.</description>
+    </key>
+    <key type="as" name="mark-colors">
+    	<default>['TODO#CF830D','FIXME#AA0000','CHANGED#008000','NOTE#1E90FF','OPTIMIZE#A020F0','IMPROVE#D618A4']</default>
+    	<summary>Known Mark Colors</summary>
+    	<description>Define the color for each known mark.</description>
+    </key>
+  </schema>
+</schemalist>

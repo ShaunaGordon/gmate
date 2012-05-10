@@ -28,7 +28,7 @@ def parse_directory(root):
 
     home_folder = os.path.expanduser('~')
 
-    # TODO: Look first for a config file present in /etc to facility configuration
+    # TODO: Look first for a config file present in /etc to facilitate configuration
     # Config FileName
     config_file = os.path.join(os.path.dirname(__file__), "todo.conf")
 

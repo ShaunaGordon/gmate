@@ -16,19 +16,15 @@
 #
 # 2007-10-25 - Alexandre da Silva <simpsomboy@gmail.com>
 # Obtained original program from Nando Vieira, and changed need use only
-# python and mozembed, removed not used code
+# python and mozembed, removed not used code.
+# 2012-5-10 - Shauna Gordon <shauna@shaunagordon.com>
+# Ported to Gedit 3
 
 
+from gi.repository import Gtk, Gio, GObject, Gedit, WebKit
 from gettext import gettext as _
-import gedit
-import gconf
-import gtk
-import gtk.gdk
-import os
-import pygtk
-import webkit
-import re
-import urllib
+#import Gtk.gdk
+import os, re, urllib
 
 from todo import parse_directory
 
@@ -45,9 +41,9 @@ ui_str = """
 </ui>
 """
 
-class BrowserPage(webkit.WebView):
+class BrowserPage(WebKit.WebView):
     def __init__(self):
-        webkit.WebView.__init__(self)
+        WebKit.WebView.__init__(self)
 
 def debug(text, level=1):
     if os.environ.has_key(DEBUG_NAME):
@@ -60,23 +56,22 @@ def debug(text, level=1):
             print "[%s] debug error" % DEBUG_TITLE
 
 # TODO: Create a Configuragion dialog
-class TodoPlugin(gedit.Plugin):
+class TodoPlugin(GObject.Object, Gedit.WindowActivatable):
+    window = GObject.property(type=Gedit.Window)
+
     def __init__(self):
-        gedit.Plugin.__init__(self)
+        GObject.Object.__init__(self)
         self.instances = {}
 
-    def activate(self, window):
+    def do_activate(self):
         debug('activating plugin')
-        self.instances[window] = TodoWindowHelper(self, window)
+        self.instances[self.window] = TodoWindowHelper(self, self.window)
 
-    def deactivate(self, window):
+    def do_deactivate(self):
         debug('deactivating plugin')
-        self.instances[window].deactivate()
-        del self.instances[window]
+        self.instances[self.window].deactivate()
+        del self.instances[self.window]
 
-    def update_ui(self, window):
-        debug('updating ui')
-        self.instances[window].update_ui()
 
 class TodoWindowHelper:
     handlers = {}
@@ -84,11 +79,12 @@ class TodoWindowHelper:
     mt = re.compile(r'(?P<protocol>^gedit:\/\/)(?P<file>.*?)\?line=(?P<line>.*?)$')
 
     def __init__(self, plugin, window):
+        base = u'org.gnome.gedit.plugins.todo'
         self.window = window
         self.plugin = plugin
         self.todo_window = None
         self._browser = None
-        self.client = gconf.client_get_default()
+        self.client = Gio.Settings.new(base)
         self.add_menu()
 
     def deactivate(self):
@@ -101,10 +97,10 @@ class TodoWindowHelper:
 
     def add_menu(self):
         actions = [
-            ('ToDo', gtk.STOCK_EDIT, _('TODO-List'), '<Control><Alt>t', _("List all TODO marks from your current project"), self.show_todo_marks)
+            ('ToDo', Gtk.STOCK_EDIT, _('TODO-List'), '<Control><Alt>t', _("List all TODO marks from your current project"), self.show_todo_marks)
         ]
 
-        action_group = gtk.ActionGroup("ToDoActions")
+        action_group = Gtk.ActionGroup("ToDoActions")
         action_group.add_actions(actions, self.window)
 
         self.manager = self.window.get_ui_manager()
@@ -130,33 +126,30 @@ class TodoWindowHelper:
         rt_path = urllib.unquote(root.replace("file://", ""))
         return (rt_path, title)
 
-    # taken from snapopen plugin
+    # Taken from FindInFiles
     def get_filebrowser_root(self):
-        base = u'/apps/gedit-2/plugins/filebrowser/on_load'
-        client = gconf.client_get_default()
-        client.add_dir(base, gconf.CLIENT_PRELOAD_NONE)
-        path = os.path.join(base, u'virtual_root')
-        val = client.get(path)
-
+        base = u'org.gnome.gedit.plugins.filebrowser'
+        client = Gio.Settings.new(base)
+        val = client.get_string('virtual-root')
         if val is not None:
-            base = u'/apps/gedit-2/plugins/filebrowser'
-            client = gconf.client_get_default()
-            client.add_dir(base, gconf.CLIENT_PRELOAD_NONE)
-            path = os.path.join(base, u'filter_mode')
-            fbfilter = client.get(path).get_string()
-
-        return val.get_string()
+            try:
+                fbfilter = client.get_strv('filter-mode')
+            except AttributeError:
+                fbfilter = "hidden"
+            if 'hide-hidden' in fbfilter:
+                self._show_hidden = True
+            else:
+                self._show_hidden = False
+        return val
 
     # taken from snapopen plugin
     def get_eddt_root(self):
-        base = u'/apps/gedit-2/plugins/eddt'
-        client = gconf.client_get_default()
-        client.add_dir(base, gconf.CLIENT_PRELOAD_NONE)
-        path = os.path.join(base, u'repository')
-        val = client.get(path)
+        base = u'org.gnome.gedit.plugins.eddt'
+        client = Gio.Settings.new(base)
+        val = client.get_string('virtual-root')
 
         if val is not None:
-            return val.get_string()
+            return val
 
     def show_todo_marks(self, *args):
         debug("opening list of todo marks")
@@ -175,8 +168,8 @@ class TodoWindowHelper:
         else:
             self._browser = BrowserPage()
             self._browser.connect('navigation-requested', self.on_navigation_request)
-            self.todo_window = gtk.Window()
-            self.todo_window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
+            self.todo_window = Gtk.Window()
+            self.todo_window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
             self.todo_window.resize(700,510)
             self.todo_window.connect('delete_event', self.on_todo_close)
             self.todo_window.connect("key-release-event", self.on_window_key)
@@ -192,7 +185,7 @@ class TodoWindowHelper:
         return True
 
     def on_window_key(self, widget, event):
-        if event.keyval == gtk.keysyms.Escape:
+        if event.keyval == Gdk.KEY_Escape:
             self.todo_window.hide()
 
     def on_navigation_request(self, page, frame, request):
@@ -227,9 +220,6 @@ class TodoWindowHelper:
             return 0
 
     def update(self, text=None):
-        pass
-
-    def update_ui(self):
         pass
 
     def set_data(self, name, value):
